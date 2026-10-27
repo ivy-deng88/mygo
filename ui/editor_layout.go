@@ -172,8 +172,14 @@ func (e *node) paintInput(p *Painter) {
 		if ed.placeholderColorSet {
 			color = ed.placeholderColor
 		}
-		// The placeholder aligns itself in the content box, as its layout has the box's width.
-		p.textLayout(pl, e.x+e.contentX(), oy, color, ts, nil)
+		// The placeholder centers itself in the content box by its own line
+		// height, as the typed line does: a fallback font's taller line
+		// (CJK against a Latin interface font) must not drop below it.
+		py := oy
+		if ed.area == nil && len(pl.Lines) > 0 {
+			py = box.Y + max((box.H-pl.Lines[0].Height)/2, 0)
+		}
+		p.textLayout(pl, e.x+e.contentX(), py, color, ts, nil)
 	}
 	if ed.area != nil {
 		ed.area.paint(e, p, e.x+ed.originX, e.y+ed.originY)
