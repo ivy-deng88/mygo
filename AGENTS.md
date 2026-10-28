@@ -189,3 +189,12 @@ Windows GUI tests need Windows with the WebView2 Runtime (a GitHub Actions
   behind ("What tests leave behind" in the architecture guide) fails it, not
   the tests after it. Before calling a failure older than a pull request,
   reproduce it on a new X server, without running the branch's binary on it.
+
+## Local fork (this checkout)
+
+This checkout serves the user's desktop applications (Calico Studio) through
+`go mod replace`. `main` mirrors upstream and never carries changes; patches are
+cherry-picked into `local`, which every project compiles against — keep this
+checkout on `local`. Read [docs/local-patches.md](docs/local-patches.md) before changing code:
+patches must be optional (zero value keeps the old behaviour), must not change
+shared defaults, and project-only logic stays in the app.
