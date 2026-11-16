@@ -159,6 +159,12 @@ func coreSidebarSection(c *context, title string, open *bool, fn func()) *node {
 // SidebarItem creates an item of a Sidebar choosing id, showing label
 // after icon, nil for none. Add to it with Children, as a Badge.
 func coreSidebarItem(c *context, id string, icon *SVG, label string) *node {
+	return coreSidebarItemLines(c, id, icon, label, "")
+}
+
+// SidebarItemLines is SidebarItem with a second, smaller line under label,
+// as a list of mailboxes with their account under each.
+func coreSidebarItemLines(c *context, id string, icon *SVG, label, subtitle string) *node {
 	t := c.theme
 	sb := c.sidebar
 	item := coreRow(c).Key(id).AlignItems(Center).Gap(t.Space(2)).Padding(t.Space(1.5), t.Space(2)).Radius(t.Radius).Shrink(0).Role(RoleTreeItem)
@@ -176,7 +182,7 @@ func coreSidebarItem(c *context, id string, icon *SVG, label string) *node {
 
 		})
 		chosen, focused = *sb.selected == id, sb.e.Focused()
-		sb.items = append(sb.items, sidebarEntry{id, label})
+		sb.items = append(sb.items, sidebarEntry{id, strings.TrimSpace(label + " " + subtitle)})
 		if chosen {
 			sb.chosen = item
 		}
@@ -211,7 +217,20 @@ func coreSidebarItem(c *context, id string, icon *SVG, label string) *node {
 		if icon != nil {
 			coreIcon(c, icon).FontSize(16).TextColor(iconColor)
 		}
-		coreText(c, label).Grow(1).SingleLine()
+		if subtitle == "" {
+			coreText(c, label).Grow(1).SingleLine()
+			return
+		}
+		lines := coreColumn(c).Grow(1).AlignItems(Start)
+		lines.Children(func() {
+			coreText(c, label).SingleLine()
+			sub := coreText(c, subtitle).SingleLine().FontSize(t.FontSize - 3)
+			if chosen && focused {
+				sub.TextColor(t.AccentText.Alpha(0.8))
+			} else {
+				sub.TextColor(t.TextMuted)
+			}
+		})
 	})
 	return item
 }

@@ -2381,6 +2381,19 @@ func SidebarItem(c *Context, id string, icon *SVG, label string) Element {
 	return wrapElement(_e)
 }
 
+// SidebarItemLines is SidebarItem with a second, smaller line under label,
+// as a list of mailboxes with their account under each.
+func SidebarItemLines(c *Context, id string, icon *SVG, label string, subtitle string) Element {
+	_ctx := c.build()
+	if _ctx == nil {
+		return Element{}
+	}
+	_ctx.rt.beginBuild()
+	_e := coreSidebarItemLines(_ctx, id, icon, label, subtitle)
+	_ctx.rt.endBuild()
+	return wrapElement(_e)
+}
+
 // SidebarSection creates a section of a Sidebar under title, holding the
 // items fn builds while *open is true, as Finder's: a click on the title
 // shows and hides them, as does its arrow, which shows as the pointer

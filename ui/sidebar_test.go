@@ -6,6 +6,24 @@ import (
 	"github.com/egoist/mygo/internal/platform"
 )
 
+func TestSidebarItemLines(t *testing.T) {
+	place := "s1"
+	tt := coreNewTester(func(c *context) {
+		coreSidebar(c, &place, func() {
+			coreSidebarSection(c, "Projects", nil, func() {
+				coreSidebarItemLines(c, "s1", nil, "Codex", "阅读 docs/temp 文档")
+				coreSidebarItemLines(c, "s2", nil, "OpenCode", "项目初步查看")
+			})
+		}).Width(240)
+	}, 400, 300)
+	tt.SetPreferences(Preferences{ReduceMotion: true, TextScale: 1})
+	for _, want := range []string{"Codex", "阅读 docs/temp 文档", "OpenCode", "项目初步查看"} {
+		if !tt.HasText(want) {
+			t.Fatalf("缺少 %q：%v", want, tt.Texts())
+		}
+	}
+}
+
 func TestSidebar(t *testing.T) {
 	place, changes := "recents", 0
 	locations := true
