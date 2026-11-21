@@ -648,6 +648,14 @@ func (t *tray) SetImage(data []byte, template bool) error {
 	if err := os.WriteFile(file, img, 0o644); err != nil {
 		return err
 	}
+	// An app that updates the icon every second would leave one file per
+	// update in /tmp until its quota runs out, and a full quota makes
+	// every write fail with EDQUOT, also in unrelated processes: once the
+	// indicator host has been pointed at icon-N, icon-N-1 has no reader
+	// left, so keep one file behind the latest and drop the older ones.
+	if t.icons > 2 {
+		os.Remove(filepath.Join(t.iconDir, fmt.Sprintf("icon-%d.png", t.icons-2)))
+	}
 	appIndicatorSetIconFull(t.ind, cs(file), cs(""))
 	t.image, t.template = data, template
 	return nil

@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/png"
 	"os"
+	"path/filepath"
 	"testing"
 	"unsafe"
 
@@ -98,6 +99,46 @@ type trayAppearanceHandler struct{ changed func() }
 func (*trayAppearanceHandler) Clicked()             {}
 func (*trayAppearanceHandler) RightClicked()        {}
 func (h *trayAppearanceHandler) AppearanceChanged() { h.changed() }
+
+// TestTrayIconCleanup checks that repeated icon updates leave only the two
+// latest files in the tray's temp dir: the indicator host reads the icon by
+// its absolute path, so once it has been pointed at icon-N, icon-N-1 has no
+// reader left, and one file per update would fill /tmp up to its quota.
+func TestTrayIconCleanup(t *testing.T) {
+	oldSet := appIndicatorSetIconFull
+	t.Cleanup(func() { appIndicatorSetIconFull = oldSet })
+	var shown string
+	appIndicatorSetIconFull = func(_ ptr, file, _ *byte) {
+		shown = goStr(ptr(unsafe.Pointer(file)))
+	}
+	tr := &tray{iconDir: t.TempDir()}
+	for i := 0; i < 4; i++ {
+		if err := tr.SetImage([]byte{byte(i)}, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if filepath.Base(shown) != "icon-4.png" {
+		t.Errorf("host was pointed at %q, want icon-4.png", shown)
+	}
+	entries, err := os.ReadDir(tr.iconDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	if len(names) != 2 || names[0] != "icon-3.png" || names[1] != "icon-4.png" {
+		t.Errorf("icon dir holds %v, want [icon-3.png icon-4.png]", names)
+	}
+	data, err := os.ReadFile(shown)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data) != 1 || data[0] != 3 {
+		t.Errorf("latest icon holds %x, want 03", data)
+	}
+}
 
 // TestMenuHides checks that a window with a hidden title bar keeps its menu
 // bar out of sight, so that the window buttons stay at the top of the
