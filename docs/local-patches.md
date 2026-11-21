@@ -85,6 +85,7 @@ git push -u origin fix/<主题>
 | 主题分支 | 内容 | 为什么桌面需要 | 上游状态 |
 |---|---|---|---|
 | `fix/cjk-placeholder-centering` | `ui/editor_layout.go` 两处：`inputHeight` 让单行输入框的高度把占位文字的行高也算进去（取两者较大者）；`paintInput` 让 placeholder 按其自身行高在内容框垂直居中 | Linux/Pango 下纯中文文本经 fontconfig 回退到 CJK 字体（如 Noto Sans CJK），行框比拉丁界面字体（如 Ubuntu Sans）高 ~3px。原实现只用空文本（纯拉丁字体）的行高定输入框高度和占位顶部，CJK 占位行框（20px）装进拉丁行框（17px）放不下，整体下沉 ~2px，与输入框图标错位；仅居中而不同时补高度会被 `(17-20)/2 < 0` 钳到 0，两处缺一不可。英文/数字无回退不受影响 | 未提 PR；已实测复现（`Metrics` 对比：Ubuntu Sans EN 17 / CJK 20）。上游若以其他写法修复，本主题作废并删除 |
+| 直上 `local`（tray 图标清理） | `internal/linux/menu.go` 的 `tray.SetImage`：写新图标 `icon-N.png` 后删除 `icon-(N-2).png`，目录里只留最近两个文件 | 文件名递增是为了让 indicator 宿主重新加载图标（KDE 会误认主题图标），但旧文件从不删除：lokguard 每秒更新一次托盘图标，一次开机累计 13 万个文件 ≈ 530MB，把 `/tmp`（usrquota tmpfs，每用户配额）吃满后所有进程写 /tmp 都报 EDQUOT。宿主进程里 GTK 的图标加载也随之失败，触发 `gtkiconhelper.c` 的断言 `Bail out!` 直接 abort——ragdoll-studio 2026-11-19/20 因此崩了 16 次。这是上游 bug：按指示宿主已改读新路径，旧文件没有读者 | 未提 PR；如需上游化可从本提交切 `fix/tray-icon-cleanup` |
 
 ## 已知与本 fork 无关的测试失败
 
